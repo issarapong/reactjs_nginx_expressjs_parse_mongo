@@ -1,23 +1,33 @@
 version: '3'
 services:
 
-    mongo:
+    mongo_db:
         image: mongo
         ports:
             - 27017:27017
         volumes:
             - ./database:/data/db
 
+    mongoimport:
+        image: mongo
+        links:
+            - mongo_db
+        volumes:
+            - ./sample-data.json:/import
+        command: >
+            bash -c 'sleep 10 && 
+            mongoimport --host mongo_db --db dev --type json --file /import/sample-data.json --jsonArray'
+          
     parse:
         image: parseplatform/parse-server
         ports:
             - 1337:1337
         links:
-            - mongo
+            - mongo_db
         environment:
             - PARSE_SERVER_APPLICATION_ID=yourappid
             - PARSE_SERVER_MASTER_KEY=yourmasterkey
-            - PARSE_SERVER_DATABASE_URI=mongodb://mongo:27017/dev
+            - PARSE_SERVER_DATABASE_URI=mongodb://mongo_db:27017/dev
             - PARSE_SERVER_START_LIVE_QUERY_SERVER=1
             - PARSE_SERVER_LIVE_QUERY={"classNames":["people","monitor"]}
             - PARSE_SERVER_MASTER_KEY_IPS=0.0.0.0/0 # Set for allow all ip
@@ -38,3 +48,4 @@ services:
             - ./parse/parse-dashboard-config.json:/src/Parse-Dashboard/parse-dashboard-config.json
 
 ## add  - PARSE_SERVER_MASTER_KEY_IPS=0.0.0.0/0 # Set for allow all ip
+         
